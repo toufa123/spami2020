@@ -1,0 +1,16 @@
+created:
+    - database/factories/Models/CountryFactory.php
+    - database/factories/Models/SpamiFactory.php
+    - database/factories/Models/TacsFactory.php
+    - database/migrations/2020_11_22_161241_create_countries_table.php
+    - database/migrations/2020_11_22_161242_create_spamis_table.php
+    - database/migrations/2020_11_22_161243_create_tacs_table.php
+    - database/migrations/2020_11_22_161244_create_country_spami_table.php
+    - app/Models/Country.php
+    - app/Models/Spami.php
+    - app/Models/Tacs.php
+models:
+    Models\User: { name: string, email: string, email_verified_at: 'datetime nullable', password: string, remember_token: 'string:100 nullable' }
+    Models\Country: { ISO: 'string|min:3', name: string, relationships: { belongsToMany: Spami } }
+    Models\Spami: { code: 'sting|min:3', eng_name: string, fr_name: string, year_inclusion: string, relationships: { belongsToMany: Country, belongsTo: Tacs } }
+    Models\Tacs: { code: 'sting|min:3', year: string, relationships: { hasMany: User, hasOne: Spami } }

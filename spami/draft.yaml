@@ -1,0 +1,23 @@
+models:
+  Models\Country :
+    ISO: string|min:3
+    name: string
+    relationships:
+      belongsToMany: Spami
+
+  Models\Spami:
+    code : sting|min:3
+    eng_name: string
+    fr_name: string
+    year_inclusion : string
+    relationships:
+      belongsToMany: Country
+      belongsTo : Tacs
+
+  Models\Tacs:
+    code: sting|min:3
+    year: string
+    relationships:
+      hasMany: User
+      hasOne: Spami
+

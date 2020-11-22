@@ -1,0 +1,209 @@
+version: '3'
+services:
+  #######################################
+  # PHP application Docker container
+  #######################################
+  app:
+    container_name: "${name}_app"
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    links:
+      #- mysql
+      - postgres
+      - maildev:maildev
+      #- solr
+      #- elasticsearch
+      #- redis
+      #- memcached
+      #- ftp
+    depends_on:
+      - postgres
+    ports:
+      - "${ngnix80port}:80"
+      - "${ngnix443port}:443"
+      #- "10022:22"
+    volumes:
+      - ./spami/:/app/
+    environment:
+      - DATABASE_URL=pgsql://admin:postgres@postgres:5432/db_${name}
+    env_file:
+      - etc/environment.yml
+      - etc/environment.development.yml
+    labels:
+      - "traefik.http.routers.${name}_app.rule=Host(`${name}.docker.localhost`)"
+      #######################################
+      # MySQL server
+      #######################################
+      #mysql:
+      #  build:
+      #    context: docker/mysql/
+      #dockerfile: MySQL-5.5.Dockerfile
+      #    dockerfile: MySQL-5.6.Dockerfile
+      #dockerfile: MySQL-5.7.Dockerfile
+      #dockerfile: MariaDB-5.5.Dockerfile
+      #dockerfile: MariaDB-10.Dockerfile
+      #dockerfile: Percona-5.5.Dockerfile
+      #dockerfile: Percona-5.6.Dockerfile
+      #dockerfile: Percona-5.7.Dockerfile
+  #  volumes:
+  #    - mysql:/var/lib/mysql
+  #  env_file:
+  #    - etc/environment.yml
+  #    - etc/environment.production.yml
+  #######################################
+  # PostgreSQL server
+  #######################################
+  postgres:
+    container_name: "${name}_database"
+    restart: always
+    build:
+      context: docker/postgres/
+      dockerfile: Postgres.Dockerfile
+    #    dockerfile: Postgres-9.5.Dockerfile
+    ports:
+      - "${pg_port}:5432"
+    volumes:
+      #  - solr:/opt/solr/server/solr/data
+      - "data:/var/lib/postgresql/data"
+      #- ./backup/mamias26062020.sql:/docker-entrypoint-initdb.d/setup-db.sql
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - DB_HOST=postgres
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=db_${name}
+      - POSTGRES_MULTIPLE_EXTENSIONS=postgis
+      - DEFAULT_ENCODING="UTF8"
+    env_file:
+      - etc/environment.yml
+      - etc/environment.production.yml
+    command: bash -c "while [ ! -f /docker-entrypoin-initdb.d/public.sql ]; do sleep 1; done && /docker-entrypoint.sh"
+
+  #######################################
+  # Geoserver
+  #######################################
+  geoserver:
+    container_name: "${name}_geoserver"
+    image: kartoza/geoserver:${VERSION}
+    volumes:
+      - ./geoserver:/opt/geoserver/data_dir
+    ports:
+      - "${geoserver_port}:8080"
+    restart: on-failure
+    environment:
+      - GEOSERVER_DATA_DIR=/opt/geoserver/data_dir
+      - ENABLE_JSONP=true
+      - MAX_FILTER_RULES=20
+      - OPTIMIZE_LINE_WIDTH=false
+      - FOOTPRINTS_DATA_DIR=/opt/footprints_dir
+      - GEOWEBCACHE_CACHE_DIR=/opt/geoserver/data_dir/gwc
+      - GEOSERVER_ADMIN_USER=admin
+      - GEOSERVER_ADMIN_PASSWORD=admin
+      - INITIAL_MEMORY=4G
+      - MAXIMUM_MEMORY=6G
+      - XFRAME_OPTIONS='false'
+      - STABLE_EXTENSIONS='inspire-plugin, ysld-plugin, css-plugin, importer-plugin, importer-bdb-plugin, csw-plugin'
+      - COMMUNITY_EXTENSIONS='metadata-plugin, ogr-datastore-plugin, colormap-plugin'
+      - SAMPLE_DATA=false
+      - GEOSERVER_CSRF_DISABLED=true
+      - EXISTING_DATA_DIR=true
+    #env_file:
+    #    - docker-env/geoserver.env
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`geoserver.docker.localhost`)"
+  #######################################
+  # Mapstore 2
+  #######################################
+  mapstore:
+      container_name: "${name}_mapstore"
+      image: geosolutionsit/mapstore2:${version}
+      ports:
+        - "${mapstore_port}:8080"
+      environment:
+        - Ddatadir.location=/usr/local/tomcat/webapps/mapstore
+        - Dallowed.resources=localConfig,pluginsConfig,extensions,config,new
+      #volumes:
+        #- ./mapstore-data/localConfig.json:/usr/local/tomcat/webapps/mapstore/
+      depends_on:
+        - postgres
+      labels:
+        - "traefik.http.routers.${name}_mapstore.rule=Host(`mapstore.docker.localhost`)"
+  #######################################
+  # pgAdmin
+  #######################################
+  pgAdmin:
+    restart: always
+    container_name: "${name}_pgadmin4"
+    image: dpage/pgadmin4
+    ports:
+      - "${pgadmin_port}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: atef.ouerghi@spa-rac.org
+      PGADMIN_DEFAULT_PASSWORD: toufa_2512
+    volumes:
+      - "pgadmin:/var/lib/pgadmin"
+    depends_on:
+      - postgres
+    links:
+      - postgres
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`pgadmin.docker.localhost`)"
+  #######################################
+  # Mail
+  #######################################
+  maildev:
+    container_name: "${name}_maildev"
+    image: djfarrelly/maildev
+    restart: always
+    ports:
+      - "${maildev_port}:80" # smtp server
+      - "1027:25"
+    labels:
+      - "traefik.http.services.${name}_mail.loadbalancer.server.port=1025"
+      - "traefik.http.routers.${name}_mail.rule=Host(`mail.${name}.localhost`)"
+  #######################################
+  # Portainer
+  #######################################
+  portainer:
+    image: portainer/portainer
+    container_name: "${name}_portainer"
+    restart: always
+    ports:
+      - "${portainer_port}:80"
+    command: --no-auth -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`portainer.${name}.docker.localhost`)"
+  #######################################
+  # Traefik
+  #######################################
+  traefik:
+    image: traefik:latest
+    container_name: "${name}_traefik"
+    restart: always
+    command: --api.insecure=true --providers.docker
+    ports:
+      #- '8000:80'
+      - '${traefik_port}:8080' # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+
+  data:
+    name: ${name}_data # Real ending name
+    external: false
+  pgadmin:
+    name: ${name}_pgadmin
+    external: false
+  geoserver-data:
+    name: ${name}_geoserver-data
+    external: false
+  mapstore-data:
+    name: ${name}_mapstore-data
+    external: false

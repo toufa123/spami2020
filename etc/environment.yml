@@ -10,7 +10,7 @@
 # Webserver
 
 # General
-WEB_DOCUMENT_ROOT=/app/
+WEB_DOCUMENT_ROOT=/app/public/
 WEB_DOCUMENT_INDEX=index.php
 CLI_SCRIPT=php /app/index.php
 
@@ -49,7 +49,7 @@ CLI_SCRIPT=php /app/index.php
 # -> ssh-rsa AAAAB3Nza....
 #  Github public ssh keys:
 # -> https://github.com/USERNAME.keys
-SSH_AUTH_KEY=""
+#SSH_AUTH_KEY=""
 
 #######################################
 # MySQL settings
@@ -59,20 +59,20 @@ SSH_AUTH_KEY=""
 #    because it's stored database in
 #    volume and provisioning is only
 #    done once.
-MYSQL_ROOT_PASSWORD=dev
-MYSQL_USER=dev
-MYSQL_PASSWORD=dev
-MYSQL_DATABASE=database
+#MYSQL_ROOT_PASSWORD=dev
+#MYSQL_USER=dev
+#MYSQL_PASSWORD=dev
+#MYSQL_DATABASE=database
 
 #######################################
 # PostgreSQL settings
-POSTGRES_USER=dev
-POSTGRES_PASSWORD=dev
-POSTGRES_DATABASE=dev
+#POSTGRES_USER=dev
+#POSTGRES_PASSWORD=dev
+#POSTGRES_DATABASE=dev
 
 #######################################
 # FTP settings
-FTP_USER=dev
-FTP_PASSWORD=dev
-FTP_PATH=/storage/ftp/
+#FTP_USER=dev
+#FTP_PASSWORD=dev
+#FTP_PATH=/storage/ftp/
 #FTP_PATH=/app/

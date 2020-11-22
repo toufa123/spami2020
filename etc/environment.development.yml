@@ -15,15 +15,15 @@ PHP_DEBUGGER=xdebug
 # Context environment
 
 # TYPO3
-TYPO3_CONTEXT=Development/Docker
+#TYPO3_CONTEXT=Development/Docker
 
 # Symfony
-SYMFONY_ENV=dev
-SYMFONY_DEBUG=0
+#SYMFONY_ENV=dev
+#SYMFONY_DEBUG=0
 
 # CakePHP
-CAKE_ENV=dev
+#CAKE_ENV=dev
 
 # yii
-YII_ENVIRONMENT=Development
+#YII_ENVIRONMENT=Development
 

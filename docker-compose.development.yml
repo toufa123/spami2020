@@ -1,201 +1,209 @@
-version: '2'
+version: '3'
 services:
   #######################################
   # PHP application Docker container
   #######################################
   app:
+    container_name: "${name}_app"
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile.development
     links:
-      - mail
-      - mysql
-      #- postgres
+      #- mysql
+      - postgres
+      - maildev:maildev
       #- solr
       #- elasticsearch
       #- redis
       #- memcached
       #- ftp
+    depends_on:
+      - postgres
     ports:
-      - "8000:80"
-      - "8443:443"
-      - "10022:22"
+      - "${ngnix80port}:80"
+      - "${ngnix443port}:443"
+      #- "10022:22"
     volumes:
-      - ./app/:/app/
-      - ./:/docker/
-    # cap and privileged needed for slowlog
-    cap_add:
-      - SYS_PTRACE
-    privileged: true
+      - ./webapp/:/app/
+    environment:
+      - DATABASE_URL=pgsql://admin:postgres@postgres:5432/db_${name}
     env_file:
       - etc/environment.yml
       - etc/environment.development.yml
-    environment:
-      - VIRTUAL_HOST=.app.boilerplate.docker
-      - VIRTUAL_PORT=80
-      - POSTFIX_RELAYHOST=[mail]:1025
-
-
-  #######################################
-  # MySQL server
-  #######################################
-  mysql:
-    build:
-      context: docker/mysql/
+    labels:
+      - "traefik.http.routers.${name}_app.rule=Host(`${name}.docker.localhost`)"
+      #######################################
+      # MySQL server
+      #######################################
+      #mysql:
+      #  build:
+      #    context: docker/mysql/
       #dockerfile: MySQL-5.5.Dockerfile
-      dockerfile: MySQL-5.6.Dockerfile
+      #    dockerfile: MySQL-5.6.Dockerfile
       #dockerfile: MySQL-5.7.Dockerfile
       #dockerfile: MariaDB-5.5.Dockerfile
       #dockerfile: MariaDB-10.Dockerfile
       #dockerfile: Percona-5.5.Dockerfile
       #dockerfile: Percona-5.6.Dockerfile
       #dockerfile: Percona-5.7.Dockerfile
-    ports:
-      - 13306:3306
-    volumes:
-      - mysql:/var/lib/mysql
-    env_file:
-      - etc/environment.yml
-      - etc/environment.development.yml
-
+  #  volumes:
+  #    - mysql:/var/lib/mysql
+  #  env_file:
+  #    - etc/environment.yml
+  #    - etc/environment.production.yml
   #######################################
   # PostgreSQL server
   #######################################
-  #postgres:
-  #  build:
-  #    context: docker/postgres/
-  #    dockerfile: Postgres-9.4.Dockerfile
-  #    dockerfile: Postgres-9.5.Dockerfile
-  #  ports:
-  #    - 15432:5432
-  #  volumes:
-  #    - postgres:/var/lib/postgresql/data
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
+  postgres:
+    container_name: "${name}_database"
+    restart: always
+    build:
+      context: docker/postgres/
+      dockerfile: Postgres.Dockerfile
+    #    dockerfile: Postgres-9.5.Dockerfile
+    ports:
+      - "${pg_port}:5432"
+    volumes:
+      #  - solr:/opt/solr/server/solr/data
+      - "data:/var/lib/postgresql/data"
+      #- ./backup/mamias26062020.sql:/docker-entrypoint-initdb.d/setup-db.sql
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - DB_HOST=postgres
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=db_${name}
+      - POSTGRES_MULTIPLE_EXTENSIONS=postgis
+      - DEFAULT_ENCODING="UTF8"
+    env_file:
+      - etc/environment.yml
+      - etc/environment.production.yml
+    command: bash -c "while [ ! -f /docker-entrypoin-initdb.d/public.sql ]; do sleep 1; done && /docker-entrypoint.sh"
 
   #######################################
-  # Solr server
+  # Geoserver
   #######################################
-  #solr:
-  #  build:
-  #    context: docker/solr/
-  #  volumes:
-  #    - solr:/opt/solr/server/solr/data
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
-  #  environment:
-  #    - SOLR_STORAGE=/opt/solr/server/solr/data
-  #    - VIRTUAL_HOST=solr.boilerplate.docker
-  #    - VIRTUAL_PORT=8983
-
+  geoserver:
+    container_name: "${name}_geoserver"
+    image: kartoza/geoserver:${VERSION}
+    volumes:
+      - ./geoserver-data:/opt/geoserver/data_dir
+    ports:
+      - "${geoserver_port}:8080"
+    restart: on-failure
+    environment:
+      - GEOSERVER_DATA_DIR=/opt/geoserver/data_dir
+      - ENABLE_JSONP=true
+      - MAX_FILTER_RULES=20
+      - OPTIMIZE_LINE_WIDTH=false
+      - FOOTPRINTS_DATA_DIR=/opt/footprints_dir
+      - GEOWEBCACHE_CACHE_DIR=/opt/geoserver/data_dir/gwc
+      - GEOSERVER_ADMIN_USER=admin
+      - GEOSERVER_ADMIN_PASSWORD=admin
+      - INITIAL_MEMORY=4G
+      - MAXIMUM_MEMORY=6G
+      - XFRAME_OPTIONS='false'
+      - STABLE_EXTENSIONS='inspire-plugin, ysld-plugin, css-plugin, importer-plugin, importer-bdb-plugin, csw-plugin'
+      - COMMUNITY_EXTENSIONS='metadata-plugin, ogr-datastore-plugin, colormap-plugin'
+      - SAMPLE_DATA=false
+      - GEOSERVER_CSRF_DISABLED=true
+      - EXISTING_DATA_DIR=true
+    #env_file:
+    #    - docker-env/geoserver.env
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`geoserver.docker.localhost`)"
   #######################################
-  # Tika server
+  # Mapstore 2
   #######################################
-  #tika:
-  #  build:
-  #    context: docker/tika/
-  #  ports:
-  #    - 19998:9998
-
+  mapstore:
+    container_name: "${name}_mapstore"
+    image: geosolutionsit/mapstore2:2020.02.01
+    ports:
+      - "${mapstore_port}:8080"
+    environment:
+      - Ddatadir.location=/usr/local/tomcat/webapps/mapstore
+      - Dallowed.resources=localConfig,pluginsConfig,extensions,config,new
+      #volumes:
+      #- ./mapstore-data/localConfig.json:/usr/local/tomcat/webapps/mapstore/
+    depends_on:
+      - postgres
+    labels:
+      - "traefik.http.routers.${name}_mapstore.rule=Host(`mapstore.docker.localhost`)"
   #######################################
-  # Elasticsearch
+  # pgAdmin
   #######################################
-  #elasticsearch:
-  #  build:
-  #    context: docker/elasticsearch/
-  #  ports:
-  #    - 19200:9200
-  #    - 19300:9300
-  #  volumes:
-  #    - elasticsearch:/usr/share/elasticsearch/data
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
-  #  environment:
-  #    - VIRTUAL_HOST=elasticsearch.boilerplate.docker
-  #    - VIRTUAL_PORT=9200
-
-  #######################################
-  # Redis
-  #######################################
-  #redis:
-  #  build:
-  #    context: docker/redis/
-  #  volumes:
-  #    - redis:/data
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
-
-  #######################################
-  # Memcached
-  #######################################
-  #memcached:
-  #  build:
-  #    context: docker/memcached/
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
-
+  pgAdmin:
+    restart: always
+    container_name: "${name}_pgadmin4"
+    image: dpage/pgadmin4
+    ports:
+      - "${pgadmin_port}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: atef.ouerghi@spa-rac.org
+      PGADMIN_DEFAULT_PASSWORD: toufa_2512
+    volumes:
+      - "pgadmin:/var/lib/pgadmin"
+    depends_on:
+      - postgres
+    links:
+      - postgres
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`pgadmin.docker.localhost`)"
   #######################################
   # Mail
   #######################################
-  # Mailhog
-  mail:
-     image: mailhog/mailhog
-   #  ports:
-   #    - 8025:8025
-     environment:
-      - VIRTUAL_HOST=mail.boilerplate.docker
-      - VIRTUAL_PORT=8025
-
-  # Mailcatcher
-  #mail:
-  #  image: schickling/mailcatcher
-  #  environment:
-  #    - VIRTUAL_HOST=mail.boilerplate.docker
-  #    - VIRTUAL_PORT=1080
-
-
-  # Mailsandbox
-  #mail:
-  #  image: webdevops/mail-sandbox
-  #  environment:
-  #    - VIRTUAL_HOST=mail.boilerplate.docker
-  #    - VIRTUAL_PORT=80
-
+  maildev:
+    container_name: "${name}_maildev"
+    image: djfarrelly/maildev
+    restart: always
+    ports:
+      - "${maildev_port}:80" # smtp server
+      - "1027:25"
+    labels:
+      - "traefik.http.services.${name}_mail.loadbalancer.server.port=1025"
+      - "traefik.http.routers.${name}_mail.rule=Host(`mail.${name}.localhost`)"
   #######################################
-  # FTP (vsftpd)
+  # Portainer
   #######################################
-  #ftp:
-  #  build:
-  #    context: docker/vsftpd/
-  #  volumes:
-  #    - ./:/application/
-  #  env_file:
-  #    - etc/environment.yml
-  #    - etc/environment.development.yml
-
+  portainer:
+    image: portainer/portainer
+    container_name: "${name}_portainer"
+    restart: always
+    ports:
+      - "${portainer_port}:80"
+    command: --no-auth -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.http.routers.${name}_portainer.rule=Host(`portainer.${name}.docker.localhost`)"
   #######################################
-  # phpMyAdmin
+  # Traefik
   #######################################
-  #phpmyadmin:
-  #  image: phpmyadmin/phpmyadmin
-  #  links:
-  #    - mysql
-  #  environment:
-  #    - PMA_HOSTS=mysql
-  #    - VIRTUAL_HOST=pma.boilerplate.docker
-  #    - VIRTUAL_PORT=80
-  #  volumes:
-  #    - phpmyadmin:/sessions
+  traefik:
+    image: traefik:latest
+    container_name: "${name}_traefik"
+    restart: always
+    command: --api.insecure=true --providers.docker
+    ports:
+      #- '8000:80'
+      - '${traefik_port}:8080' # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
-  mysql:
-  postgres:
-  solr:
-  elasticsearch:
-  redis:
-  phpmyadmin:
+
+  data:
+    name: ${name}_data # Real ending name
+    external: false
+  pgadmin:
+    name: ${name}_pgadmin
+    external: false
+  geoserver-data:
+    name: ${name}_geoserver-data
+    external: false
+  mapstore-data:
+    name: ${name}_mapstore-data
+    external: false
