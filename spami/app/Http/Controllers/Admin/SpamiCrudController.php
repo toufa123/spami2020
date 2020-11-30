@@ -31,7 +31,7 @@ class SpamiCrudController extends CrudController
     {
         CRUD::setModel(\App\Models\Spami::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/spami');
-        CRUD::setEntityNameStrings('spami', 'spamis');
+        CRUD::setEntityNameStrings('SPAMI', 'SPAMIs');
     }
 
     /**

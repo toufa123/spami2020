@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 class Country extends Model
 {
     use HasFactory, CrudTrait;
-    protected $table ="country";
-    protected $primaryKey ='id';
 
     /**
      * The attributes that are mass assignable.

@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 class Spami extends Model
 {
     use HasFactory, CrudTrait;
-    protected $table ="spamis";
-    protected $primaryKey ='id';
 
     /**
      * The attributes that are mass assignable.
@@ -22,7 +20,6 @@ class Spami extends Model
         'eng_name',
         'fr_name',
         'year_inclusion',
-        'spami_id'
     ];
 
     /**
@@ -38,10 +35,5 @@ class Spami extends Model
     public function countries()
     {
         return $this->belongsToMany(\App\Models\Country::class);
-    }
-
-    public function tacs()
-    {
-        return $this->belongsTo(\App\Models\Tacs::class);
     }
 }

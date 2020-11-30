@@ -19,4 +19,6 @@ Route::group([
     Route::crud('country', 'CountryCrudController');
     Route::crud('spami', 'SpamiCrudController');
     Route::crud('tacs', 'TacsCrudController');
+
+
 }); // this should be the absolute last line of this file

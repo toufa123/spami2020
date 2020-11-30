@@ -12,12 +12,20 @@ models:
     year_inclusion : string
     relationships:
       belongsToMany: Country
-      belongsTo : Tacs
+
 
   Models\Tacs:
     code: sting|min:3
     year: string
     relationships:
       hasMany: User
-      hasOne: Spami
+      belongsTo: Spami
 
+  Models\User:
+    name: string
+    email: email|unique
+    email_verified_at: timestamp
+    password: string
+    rememberToken: string
+    relationships:
+      belongsToMany: Tacs

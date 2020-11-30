@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 class Tacs extends Model
 {
     use HasFactory, CrudTrait;
-    protected $table ="tacs";
-    protected $primaryKey ='id';
 
     /**
      * The attributes that are mass assignable.
@@ -39,6 +37,6 @@ class Tacs extends Model
 
     public function spami()
     {
-        return $this->hasMany(\App\Models\Spami::class);
+        return $this->belongsTo(\App\Models\Spami::class);
     }
 }

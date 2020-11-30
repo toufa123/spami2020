@@ -45,12 +45,23 @@
 <li class="nav-item nav-dropdown">
     <a class="nav-link nav-dropdown-toggle" href="#"><i class="nav-icon fa fa-tools"></i>Maintenance</a>
     <ul class="nav-dropdown-items">
-        <li class='nav-item'><a class='nav-link' href='{{ backpack_url('backup') }}'><i class='nav-icon la la-hdd-o'></i> Backups</a></li>
-        <li class='nav-item'><a class='nav-link' href='{{ backpack_url('log') }}'><i class='nav-icon la la-terminal'></i> Logs</a></li>
+        <li class='nav-item'><a class='nav-link' href='{{ backpack_url('backup') }}'><i
+                    class='nav-icon la la-hdd-o'></i> Backups</a></li>
+        <li class='nav-item'><a class='nav-link' href='{{ backpack_url('log') }}'><i
+                    class='nav-icon la la-terminal'></i> Logs</a></li>
     </ul>
 </li>
 
 
-<li class='nav-item'><a class='nav-link' href='{{ backpack_url('setting') }}'><i class='nav-icon fa fa-cogs'></i> <span>Global Settings</span></a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('setting') }}'><i class='nav-icon fa fa-cogs'></i> <span>Global Settings</span></a>
+</li>
 
 
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('country') }}'><i class='nav-icon la la-question'></i>
+        Countries</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('country.php') }}'><i
+            class='nav-icon la la-question'></i> Country.phps</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('spami') }}'><i class='nav-icon la la-question'></i>
+        Spamis</a></li>
+<li class='nav-item'><a class='nav-link' href='{{ backpack_url('user') }}'><i class='nav-icon la la-question'></i> Users</a>
+</li>

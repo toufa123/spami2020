@@ -43,4 +43,10 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+    
+    public function tacs()
+    {
+        return $this->belongsToMany(\App\Models\Tacs::class);
+    }
+
 }

@@ -126,12 +126,33 @@ services:
       environment:
         - Ddatadir.location=/usr/local/tomcat/webapps/mapstore
         - Dallowed.resources=localConfig,pluginsConfig,extensions,config,new
-      #volumes:
+        #volumes:
         #- ./mapstore-data/localConfig.json:/usr/local/tomcat/webapps/mapstore/
       depends_on:
         - postgres
       labels:
         - "traefik.http.routers.${name}_mapstore.rule=Host(`mapstore.docker.localhost`)"
+    #######################################
+    # Geonetwork
+    #######################################
+      Geonetwork:
+        image: geonetwork:postgres
+        restart: always
+        environment:
+          - POSTGRES_DB_HOST=${name}_database
+          - POSTGRES_DB_PORT=5432
+          - POSTGRES_DB_USERNAME=admin
+          - POSTGRES_DB_PASSWORD=postgres
+          - POSTGRES_DB_NAME=db_${name}_geonetwork
+        volumes:
+          - geonetwork-data:/var/lib/geonetwork_data
+        container_name: "${name}_geonetwork"
+        ports:
+          - "${geonetwork_port}:8080"
+        depends_on:
+          - postgres
+        labels:
+          - "traefik.http.routers.${name}_geonetwok.rule=Host(`geonetwork.docker.localhost`)"
   #######################################
   # pgAdmin
   #######################################

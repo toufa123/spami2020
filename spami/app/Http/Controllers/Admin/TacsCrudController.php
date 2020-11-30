@@ -42,8 +42,8 @@ class TacsCrudController extends CrudController
     {
         CRUD::addcolumn(['name' => 'code', 'type' => 'text', 'label'=>'TAC Code']);
         CRUD::addcolumn(['name' => 'year', 'type' => 'text', 'label'=>'Evaluation periode']);
-        CRUD::addcolumn(['name' => 'spami', 'type' => 'relationship', 'label'=>'SPAMI']);
-        CRUD::addcolumn(['name' => 'user', 'type' => 'relationship', 'label'=>'Members']);
+        CRUD::addcolumn(['name' => 'spami', 'type' => 'relationship', 'label' => 'SPAMI']);
+        CRUD::addcolumn(['name' => 'users', 'type' => 'relationship', 'label' => 'Members']);
 
         /**
          * Columns can be defined using the fluent syntax or array syntax:
@@ -64,8 +64,8 @@ class TacsCrudController extends CrudController
     {
         CRUD::setValidation(TacsRequest::class);
 
-        CRUD::addfield(['name' => 'spami_id', 'type' => 'select2', 'label'=>'SPAMI', 'pivot' => true, 'model' => 'App\Models\Spami','entity'=>'spami','attribute'=>'eng_name']);
-        CRUD::addfield(['name' => 'code', 'type' => 'text', 'label'=>'TAC Code']);
+        CRUD::addfield(['name' => 'spami', 'type' => 'select2', 'label' => 'SPAMI', 'entity' => 'spami', 'attribute' => 'eng_name']);
+        CRUD::addfield(['name' => 'code', 'type' => 'text', 'label' => 'TAC Code']);
         CRUD::addfield(['name' => 'year', 'type' => 'text', 'label'=>'Evaluation periode']);
         CRUD::addfield(['name' => 'users', 'type' => 'select2_multiple', 'label'=>'Members']);
 

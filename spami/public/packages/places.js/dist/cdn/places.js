@@ -6365,18 +6365,18 @@ var Promise$1 = function () {
   /**
     `finally` will be invoked regardless of the promise's fate just as native
     try/catch/finally behaves
-  
-    Synchronous example:
-  
-    ```js
+
+   Synchronous example:
+
+   ```js
     findAuthor() {
       if (Math.random() > 0.5) {
         throw new Error();
       }
       return new Author();
     }
-  
-    try {
+
+   try {
       return findAuthor(); // succeed or fail
     } catch(error) {
       return findOtherAuther();
@@ -6385,18 +6385,18 @@ var Promise$1 = function () {
       // doesn't affect the return value
     }
     ```
-  
-    Asynchronous example:
-  
-    ```js
+
+   Asynchronous example:
+
+   ```js
     findAuthor().catch(function(reason){
       return findOtherAuther();
     }).finally(function(){
       // author was either found, or not
     });
     ```
-  
-    @method finally
+
+   @method finally
     @param {Function} callback
     @return {Promise}
   */
